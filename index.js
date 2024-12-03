@@ -1,15 +1,16 @@
-const steamUser = require('steam-user');
-const steamTotp = require('steam-totp');
-const express = require('express'); // Add Express for the server
-const axios = require('axios'); // For self-ping functionality
+// Import required modules
+const steamUser = require('steam-user'); // For Steam bot functionality
+const steamTotp = require('steam-totp'); // For generating 2FA codes
+const express = require('express'); // For the server to keep the app alive
+const axios = require('axios'); // For self-pinging functionality
 
-// Environment variables
-var username = process.env.username;
-var password = process.env.password;
-var shared_secret = process.env.shared;
+// Load environment variables
+const username = process.env.username;
+const password = process.env.password;
+const shared_secret = process.env.shared;
 
-var games = [1172470, 739630, 730]; // AppIDs of the games
-var status = 1; // 1 - online, 7 - invisible
+const games = [1172470, 739630, 730]; // AppIDs of the games to boost
+const status = 1; // 1 - online, 7 - invisible
 
 // Initialize Steam User
 const user = new steamUser();
@@ -19,10 +20,13 @@ user.logOn({
     twoFactorCode: steamTotp.generateAuthCode(shared_secret),
 });
 
+// Handle Steam login
 user.on('loggedOn', () => {
-    if (user.steamID != null) console.log(user.steamID + ' - Successfully logged on');
-    user.setPersona(status); // Set user status
-    user.gamesPlayed(games); // Set games to boost
+    if (user.steamID) {
+        console.log(`${user.steamID} - Successfully logged on`);
+    }
+    user.setPersona(status); // Set the user's status
+    user.gamesPlayed(games); // Start boosting games
 });
 
 // Memory usage logging (every 10 minutes)
@@ -43,9 +47,10 @@ app.get('/', (req, res) => {
 setInterval(() => {
     axios.get(`http://localhost:${PORT}`)
         .then(() => console.log('Self-ping successful'))
-        .catch((err) => console.error('Self-ping failed:', err));
+        .catch((err) => console.error('Self-ping failed:', err.message));
 }, 5 * 60 * 1000); // Ping every 5 minutes
 
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
