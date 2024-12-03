@@ -1,6 +1,7 @@
 const steamUser = require('steam-user');
 const steamTotp = require('steam-totp');
 const express = require('express'); // Add Express for the server
+const axios = require('axios'); // For self-ping functionality
 
 // Environment variables
 var username = process.env.username;
@@ -24,26 +25,11 @@ user.on('loggedOn', () => {
     user.gamesPlayed(games); // Set games to boost
 });
 
-// Optional: Uncomment if you want to log in with a second account
-// var username2 = process.env.username2;
-// var password2 = process.env.password2;
-// var shared_secret2 = process.env.shared2;
-
-// var games2 = [730, 440, 570, 304930];
-// var status2 = 1;
-
-// const user2 = new steamUser();
-// user2.logOn({
-//     accountName: username2,
-//     password: password2,
-//     twoFactorCode: steamTotp.generateAuthCode(shared_secret2),
-// });
-
-// user2.on('loggedOn', () => {
-//     if (user2.steamID != null) console.log(user2.steamID + ' - Successfully logged on');
-//     user2.setPersona(status2);
-//     user2.gamesPlayed(games2);
-// });
+// Memory usage logging (every 10 minutes)
+setInterval(() => {
+    const used = process.memoryUsage();
+    console.log(`Memory usage: ${JSON.stringify(used)}`);
+}, 10 * 60 * 1000); // Log every 10 minutes
 
 // Add Express server for UptimeRobot
 const app = express();
@@ -53,6 +39,13 @@ app.get('/', (req, res) => {
     res.send('Steam booster is running!');
 });
 
+// Self-ping logic to keep the app alive
+setInterval(() => {
+    axios.get(`http://localhost:${PORT}`)
+        .then(() => console.log('Self-ping successful'))
+        .catch((err) => console.error('Self-ping failed:', err));
+}, 5 * 60 * 1000); // Ping every 5 minutes
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-});
+});,
