@@ -5,11 +5,12 @@ const express = require('express'); // For the server to keep the app alive
 const axios = require('axios'); // For self-pinging functionality
 
 // Load environment variables
-const username = process.env.username;
-const password = process.env.password;
-const shared_secret = process.env.shared;
+const username = process.env.username; // Steam account username
+const password = process.env.password; // Steam account password
+const shared_secret = process.env.shared; // Steam shared secret for 2FA
 
-const games = [1172470, 739630, 730]; // AppIDs of the games to boost
+// App IDs of the games to boost
+const games = [1172470, 739630, 730];
 const status = 1; // 1 - online, 7 - invisible
 
 // Initialize Steam User
