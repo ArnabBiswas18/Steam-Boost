@@ -1,19 +1,29 @@
-// Import required modules
-const steamUser = require('steam-user'); // For Steam bot functionality
-const steamTotp = require('steam-totp'); // For generating 2FA codes
-const express = require('express'); // For the server to keep the app alive
-const axios = require('axios'); // For self-pinging functionality
+const express = require('express');
+const axios = require('axios');
+const steamUser = require('steam-user');
+const steamTotp = require('steam-totp');
 
-// Load environment variables
-const username = process.env.username; // Steam account username
-const password = process.env.password; // Steam account password
-const shared_secret = process.env.shared; // Steam shared secret for 2FA
+// Configuration
+const PORT = process.env.PORT || 3000;
+const appUrl = `https://${process.env.RENDER_EXTERNAL_URL || 'your-app.onrender.com'}`;
 
-// App IDs of the games to boost
-const games = [1172470, 739630, 730];
-const status = 1; // 1 - online, 7 - invisible
+// Steam credentials
+const username = process.env.username;
+const password = process.env.password;
+const shared_secret = process.env.shared;
 
-// Initialize Steam User
+const games = [1172470, 739630, 730]; // AppIDs of needed games
+const status = 1; // 1 = online, 7 = invisible
+
+// Express setup
+const app = express();
+
+app.get('/', (req, res) => {
+    console.log('Ping received:', new Date().toISOString());
+    res.send('App is running!');
+});
+
+// Steam client setup
 const user = new steamUser();
 user.logOn({
     accountName: username,
@@ -21,37 +31,37 @@ user.logOn({
     twoFactorCode: steamTotp.generateAuthCode(shared_secret),
 });
 
-// Handle Steam login
 user.on('loggedOn', () => {
-    if (user.steamID) {
+    if (user.steamID != null) {
         console.log(`${user.steamID} - Successfully logged on`);
     }
-    user.setPersona(status); // Set the user's status
-    user.gamesPlayed(games); // Start boosting games
+    user.setPersona(status); // Set status to online
+    user.gamesPlayed(games); // Play selected games
 });
 
-// Memory usage logging (every 10 minutes)
+// Self-ping to keep app active
 setInterval(() => {
-    const used = process.memoryUsage();
-    console.log(`Memory usage: ${JSON.stringify(used)}`);
-}, 10 * 60 * 1000); // Log every 10 minutes
-
-// Add Express server for UptimeRobot
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-    res.send('Steam booster is running!');
-});
-
-// Self-ping logic to keep the app alive
-setInterval(() => {
-    axios.get(`http://localhost:${PORT}`)
-        .then(() => console.log('Self-ping successful'))
-        .catch((err) => console.error('Self-ping failed:', err.message));
+    axios
+        .get(appUrl)
+        .then(() => console.log('Self-ping successful at:', new Date().toISOString()))
+        .catch(err => console.error('Self-ping failed:', err.message));
 }, 5 * 60 * 1000); // Ping every 5 minutes
+
+// Heartbeat logging
+setInterval(() => {
+    console.log('App heartbeat:', new Date().toISOString());
+}, 5 * 60 * 1000); // Log every 5 minutes
+
+// Error handling
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err.stack || err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
