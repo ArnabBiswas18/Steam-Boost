@@ -12,7 +12,7 @@ const username = process.env.username;
 const password = process.env.password;
 const shared_secret = process.env.shared;
 
-const games = [1172470, 739630, 730]; // AppIDs of needed games
+const games = [1422450, 1172470, 739630, 730]; // AppIDs of needed games
 const status = 1; // 1 = online, 7 = invisible
 
 // Express setup
